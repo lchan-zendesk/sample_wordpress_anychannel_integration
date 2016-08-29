@@ -31,34 +31,37 @@ function escapeString(input) {
  * redisplaying page after encountering errors.  May contain HTML, may be null.
  * @returns {string} HTML
  */
-function adminUiHtml(name, login, password, location, returnUrl, warning) {
-  let warningStr = '';
 
-  if (warning) {
-    warningStr = `${warning}<br>`;
-  }
+// Uncomment for Step 4B: Allow the Zendesk admin to set up the Integration Service
 
-  return `<html><body>
-      <form method="post" action = "./admin_ui_2">
-        Name: <input type="text" name="name" value="${escapeString(name)}"><br>
-        Login:
-          <input type="text" name="login" value="${escapeString(login)}"><br>
-        Password:
-          <input type="password"
-                 name="password"
-                 value="${escapeString(password)}"><br>
-        Wordpress location (URL):
-          <input type="text"
-                 name="wordpress_location"
-                 value="${escapeString(location)}"><br>
-        <input type="hidden"
-               name="return_url"
-               value="${escapeString(returnUrl)}"></input>
-        ${warningStr}
-        <input type="submit">
-      </form>
-    </body></html>`;
-}
+// function adminUiHtml(name, login, password, location, returnUrl, warning) {
+//   let warningStr = '';
+
+//   if (warning) {
+//     warningStr = `${warning}<br>`;
+//   }
+
+//   return `<html><body>
+//       <form method="post" action = "./admin_ui_2">
+//         Name: <input type="text" name="name" value="${escapeString(name)}"><br>
+//         Login:
+//           <input type="text" name="login" value="${escapeString(login)}"><br>
+//         Password:
+//           <input type="password"
+//                  name="password"
+//                  value="${escapeString(password)}"><br>
+//         Wordpress location (URL):
+//           <input type="text"
+//                  name="wordpress_location"
+//                  value="${escapeString(location)}"><br>
+//         <input type="hidden"
+//                name="return_url"
+//                value="${escapeString(returnUrl)}"></input>
+//         ${warningStr}
+//         <input type="submit">
+//       </form>
+//     </body></html>`;
+// }
 
 /**
  * Calculates the "external id" for a Wordpress comment which will be stored in
@@ -103,21 +106,24 @@ function parseExternalCommentId(externalCommentIdString) {
  *
  * @param {Object} res Response object to which JSON will be written
  */
-exports.manifest = res => {
-  res.send({
-    name: 'Wordpress',
-    id: 'com.zendesk.anychannel.integrations.wordpress',
-    author: 'Zendesk',
-    version: 'v0.0.1',
-    urls: {
-      admin_ui: './admin_ui',
-      pull_url: './pull',
-      channelback_url: './channelback',
-      clickthrough_url: './clickthrough',
-      healthcheck_url: './healthcheck'
-    }
-  });
-};
+
+// Uncomment for Step 4A: Create the manifest
+
+// exports.manifest = res => {
+//   res.send({
+//     name: 'Wordpress',
+//     id: 'com.zendesk.anychannel.integrations.wordpress',
+//     author: 'Zendesk',
+//     version: 'v0.0.1',
+//     urls: {
+//       admin_ui: './admin_ui',
+//       pull_url: './pull',
+//       channelback_url: './channelback',
+//       clickthrough_url: './clickthrough',
+//       healthcheck_url: './healthcheck'
+//     }
+//   });
+// };
 
 /**
  * Returns the HTML for the administrative UI for setting up or editing
@@ -189,85 +195,88 @@ function userRequestOptions(uiOptions) {
  *  login, password, wordpress_location, and return_url
  * @param {Object} res Response object to which HTML will be written
  */
-exports.admin_ui_2 = (attributes, res) => {
-  // Make a request to Wordpress to get user info.  This both allows us to
-  // validate the information we were passed, and lets us record the ID of the
-  // login, which we'll need later.
-  request.get(
-    userRequestOptions(attributes),
-    (error, wordpressResponse, body) => {
-      let users;
-      let user;
-      let adminHtml;
-      let metadata;
 
-      if (!error && wordpressResponse.statusCode === 200) {
-        // Request to Wordpress was successful- did we find the user?
-        users = JSON.parse(body);
-        user = users.find(currentUser => {
-          return currentUser.name === attributes.login;
-        });
+// Uncomment for Step 4C: Handle the credentials entered by the Zendesk admin
 
-        if (typeof user === 'undefined') {
-          // No user found, allow the admin to choose a different login
-          adminHtml = adminUiHtml(
-            attributes.name,
-            attributes.login,
-            attributes.password,
-            attributes.wordpress_location,
-            attributes.return_url,
-            `Sorry, the user '${attributes.login}' was not found,
-              please try again.`);
-          res.send(adminHtml);
+// exports.admin_ui_2 = (attributes, res) => {
+//   // Make a request to Wordpress to get user info.  This both allows us to
+//   // validate the information we were passed, and lets us record the ID of the
+//   // login, which we'll need later.
+//   request.get(
+//     userRequestOptions(attributes),
+//     (error, wordpressResponse, body) => {
+//       let users;
+//       let user;
+//       let adminHtml;
+//       let metadata;
 
-          return;
-        }
+//       if (!error && wordpressResponse.statusCode === 200) {
+//         // Request to Wordpress was successful- did we find the user?
+//         users = JSON.parse(body);
+//         user = users.find(currentUser => {
+//           return currentUser.name === attributes.login;
+//         });
 
-        // Validation passed and user found.  Format the Wordpress data into
-        // a string that we understand and can use later (e.g. in pull.)
-        metadata = JSON.stringify({
-          name: attributes.name,
-          login: attributes.login,
-          password: attributes.password,
-          author: user.id,
-          wordpress_location: attributes.wordpress_location
-        });
+//         if (typeof user === 'undefined') {
+//           // No user found, allow the admin to choose a different login
+//           adminHtml = adminUiHtml(
+//             attributes.name,
+//             attributes.login,
+//             attributes.password,
+//             attributes.wordpress_location,
+//             attributes.return_url,
+//             `Sorry, the user '${attributes.login}' was not found,
+//               please try again.`);
+//           res.send(adminHtml);
 
-        // Send the formatted data to Zendesk.  We do this by putting the info
-        // into a form and then programmatically submitting the form.
-        res.send(`<html><body>
-          <form id="finish"
-                method="post"
-                action="${escapeString(attributes.return_url)}">
-            <input type="hidden"
-                   name="name"
-                   value="${escapeString(attributes.name)}">
-            <input type="hidden"
-                   name="metadata"
-                   value="${escapeString(metadata)}">
-          </form>
-          <script type="text/javascript">
-            // Post the form
-            var form = document.forms['finish'];
-            form.submit();
-          </script>
-        </body></html>`);
-      } else {
-        // Our API call to Wordpress failed.  Alert the administrator and allow
-        // them to edit the connection info.
-        adminHtml = adminUiHtml(
-          attributes.name,
-          attributes.login,
-          attributes.password,
-          attributes.wordpress_location,
-          attributes.return_url,
-          `Sorry, we were unable to connect to Wordpress at the requested
-            location, please try again.`);
-        res.send(adminHtml);
-      }
-    }
-  );
-};
+//           return;
+//         }
+
+//         // Validation passed and user found.  Format the Wordpress data into
+//         // a string that we understand and can use later (e.g. in pull.)
+//         metadata = JSON.stringify({
+//           name: attributes.name,
+//           login: attributes.login,
+//           password: attributes.password,
+//           author: user.id,
+//           wordpress_location: attributes.wordpress_location
+//         });
+
+//         // Send the formatted data to Zendesk.  We do this by putting the info
+//         // into a form and then programmatically submitting the form.
+//         res.send(`<html><body>
+//           <form id="finish"
+//                 method="post"
+//                 action="${escapeString(attributes.return_url)}">
+//             <input type="hidden"
+//                    name="name"
+//                    value="${escapeString(attributes.name)}">
+//             <input type="hidden"
+//                    name="metadata"
+//                    value="${escapeString(metadata)}">
+//           </form>
+//           <script type="text/javascript">
+//             // Post the form
+//             var form = document.forms['finish'];
+//             form.submit();
+//           </script>
+//         </body></html>`);
+//       } else {
+//         // Our API call to Wordpress failed.  Alert the administrator and allow
+//         // them to edit the connection info.
+//         adminHtml = adminUiHtml(
+//           attributes.name,
+//           attributes.login,
+//           attributes.password,
+//           attributes.wordpress_location,
+//           attributes.return_url,
+//           `Sorry, we were unable to connect to Wordpress at the requested
+//             location, please try again.`);
+//         res.send(adminHtml);
+//       }
+//     }
+//   );
+// };
 
 /**
  * Calculates the request options to be used when requesting comment information
@@ -278,36 +287,39 @@ exports.admin_ui_2 = (attributes, res) => {
  * @param {Object} state Object containing most_recent_item_timestamp, or null
  * @returns {Object} Request options
  */
-function pullRequestOptions(metadata, state) {
-  // Get the most recent 100 comments, ordered by ID (we use ID as a proxy for
-  // created time.)  This is just a demonstration- if we wanted to productize,
-  // we'd need to make some feature decisions about how many comments we're
-  // willing to look up, and we'd probably paginate.
-  const options = {
-    uri: `${metadata.wordpress_location}/wp-json/wp/v2/comments`,
-    qs: {
-      orderby: 'id',
-      order: 'asc',
-      page: '1',
-      per_page: '100'
-    },
-    auth: {
-      user: metadata.login,
-      pass: metadata.password
-    }
-  };
 
-  // If we've previously retrieved comments, then we only want to retrieve
-  // comments that were made AFTER the most recent one we've previously seen.
-  // That is, we don't want to get repeats.  This is just a demonstration- if we
-  // wanted to productize, we'd want to deal with the case where there are new
-  // comments with the same timestamp as a comment we've already seen.
-  if (state && state.most_recent_item_timestamp) {
-    options.qs.after = state.most_recent_item_timestamp;
-  }
+// Uncomment for Step 2: Get resources from the origin service (Polling)
 
-  return options;
-}
+// function pullRequestOptions(metadata, state) {
+//   // Get the most recent 100 comments, ordered by ID (we use ID as a proxy for
+//   // created time.)  This is just a demonstration- if we wanted to productize,
+//   // we'd need to make some feature decisions about how many comments we're
+//   // willing to look up, and we'd probably paginate.
+//   const options = {
+//     uri: `${metadata.wordpress_location}/wp-json/wp/v2/comments`,
+//     qs: {
+//       orderby: 'id',
+//       order: 'asc',
+//       page: '1',
+//       per_page: '100'
+//     },
+//     auth: {
+//       user: metadata.login,
+//       pass: metadata.password
+//     }
+//   };
+
+//   // If we've previously retrieved comments, then we only want to retrieve
+//   // comments that were made AFTER the most recent one we've previously seen.
+//   // That is, we don't want to get repeats.  This is just a demonstration- if we
+//   // wanted to productize, we'd want to deal with the case where there are new
+//   // comments with the same timestamp as a comment we've already seen.
+//   if (state && state.most_recent_item_timestamp) {
+//     options.qs.after = state.most_recent_item_timestamp;
+//   }
+
+//   return options;
+// }
 
 /**
  * Removes HTML markup from a string
@@ -338,24 +350,27 @@ function stripHTML(message) {
  * @param {Array} comments Array of comments as returned by Wordpress API
  * @returns {Array} Comments transformed to Zendesk format
  */
-function transformComments(comments) {
-  let link;
 
-  return comments.length ? comments.map(comment => {
-    link = comment.link;
+// Uncomment for Step 2: Get resources from the origin service (Polling)
 
-    return {
-      external_id: externalCommentId(link, comment.id, comment.post),
-      message: stripHTML(comment.content.rendered),
-      parent_id: externalCommentId(link, comment.parent, comment.post),
-      created_at: (new Date(comment.date_gmt)).toISOString(),
-      author: {
-        external_id: comment.author.toString(),
-        name: comment.author_name || 'Anonymous'
-      }
-    };
-  }) : [];
-}
+// function transformComments(comments) {
+//   let link;
+
+//   return comments.length ? comments.map(comment => {
+//     link = comment.link;
+
+//     return {
+//       external_id: externalCommentId(link, comment.id, comment.post),
+//       message: stripHTML(comment.content.rendered),
+//       parent_id: externalCommentId(link, comment.parent, comment.post),
+//       created_at: (new Date(comment.date_gmt)).toISOString(),
+//       author: {
+//         external_id: comment.author.toString(),
+//         name: comment.author_name || 'Anonymous'
+//       }
+//     };
+//   }) : [];
+// }
 
 /**
  * Calculates the pull state for an integration.  This encapsulates the created
@@ -389,43 +404,46 @@ function pullState(comments, previousState) {
  *  a timestamp of the most recent comment we've successfully imported.
  * @param {Object} res Response object to which JSON results will be written
  */
-exports.pull = (metadata, state, res) => {
-  request.get(
-    pullRequestOptions(metadata, state),
-    (error, wordpressResponse, body) => {
-      let bodyInfo;
-      let transformedComments;
-      let newState;
-      let errorDescription;
 
-      if (!error && wordpressResponse.statusCode === 200) {
-        try {
-          bodyInfo = JSON.parse(body);
-          transformedComments = transformComments(bodyInfo);
-          newState = pullState(bodyInfo, state);
-          res.send({
-            external_resources: transformedComments,
-            state: JSON.stringify(newState)
-          });
-        } catch (e) {
-          // Bad/unexpected data from Wordpress
-          // 502 == bad gateway
-          res.sendStatus(502);
-        }
-      } else if (wordpressResponse && wordpressResponse.statusCode) {
-        // Wordpress returned an error, pass through the status code and
-        // error description
-        errorDescription = {};
-        if (body) errorDescription = { error_info: body };
-        res.status(wordpressResponse.statusCode).send(errorDescription);
-      } else {
-        // Networking error or similar- no response
-        // 503 == service unavailable
-        res.sendStatus(503);
-      }
-    }
-  );
-};
+// Uncomment for Step 2: Get resources from the origin service (Polling)
+
+// exports.pull = (metadata, state, res) => {
+//   request.get(
+//     pullRequestOptions(metadata, state),
+//     (error, wordpressResponse, body) => {
+//       let bodyInfo;
+//       let transformedComments;
+//       let newState;
+//       let errorDescription;
+
+//       if (!error && wordpressResponse.statusCode === 200) {
+//         try {
+//           bodyInfo = JSON.parse(body);
+//           transformedComments = transformComments(bodyInfo);
+//           newState = pullState(bodyInfo, state);
+//           res.send({
+//             external_resources: transformedComments,
+//             state: JSON.stringify(newState)
+//           });
+//         } catch (e) {
+//           // Bad/unexpected data from Wordpress
+//           // 502 == bad gateway
+//           res.sendStatus(502);
+//         }
+//       } else if (wordpressResponse && wordpressResponse.statusCode) {
+//         // Wordpress returned an error, pass through the status code and
+//         // error description
+//         errorDescription = {};
+//         if (body) errorDescription = { error_info: body };
+//         res.status(wordpressResponse.statusCode).send(errorDescription);
+//       } else {
+//         // Networking error or similar- no response
+//         // 503 == service unavailable
+//         res.sendStatus(503);
+//       }
+//     }
+//   );
+// };
 
 /**
  * Calculates the request options to be used when performing a channelback to
@@ -437,23 +455,26 @@ exports.pull = (metadata, state, res) => {
  * @param {string} content The text of the comment we're creating
  * @returns {Object} Post options
  */
-function channelbackOptions(metadata, parent, post, content) {
-  // Parameters for a POST to Wordpress to make a new comment in response to
-  // a pre-existing comment.
-  return {
-    uri: `${metadata.wordpress_location}/wp-json/wp/v2/comments`,
-    qs: {
-      parent,
-      post,
-      author: metadata.author,
-      content
-    },
-    auth: {
-      user: metadata.login,
-      pass: metadata.password
-    }
-  };
-}
+
+// Uncomment for Step 3: Post new resources to the origin service (Channelback)
+
+// function channelbackOptions(metadata, parent, post, content) {
+//   // Parameters for a POST to Wordpress to make a new comment in response to
+//   // a pre-existing comment.
+//   return {
+//     uri: `${metadata.wordpress_location}/wp-json/wp/v2/comments`,
+//     qs: {
+//       parent,
+//       post,
+//       author: metadata.author,
+//       content
+//     },
+//     auth: {
+//       user: metadata.login,
+//       pass: metadata.password
+//     }
+//   };
+// }
 
 /**
  * Channelback is invoked when Zendesk agents to respond to Wordpress comment
@@ -482,42 +503,45 @@ function channelbackOptions(metadata, parent, post, content) {
  *  creating
  * @param {Object} res Response object to which JSON results will be written
  */
-exports.channelback = (metadata, parentId, channelbackMessage, res) => {
-  const postId = parseExternalCommentId(parentId).post_id;
-  const options = channelbackOptions(
-    metadata,
-    parseExternalCommentId(parentId).comment_id,
-    postId,
-    channelbackMessage);
-  let bodyInfo;
-  let errorDescription;
 
-  request.post(
-    options,
-    (error, wordpressResponse, body) => {
-      if (!error && wordpressResponse.statusCode === 201) {
-        // Successfully created Wordpress comment.  Return the ID of the new
-        // comment.
-        bodyInfo = JSON.parse(body);
-        res.status(200).send({
-          external_id: externalCommentId(
-                        parseExternalCommentId(parentId).link,
-                        bodyInfo.id,
-                        postId)
-        });
-      } else if (wordpressResponse && wordpressResponse.statusCode) {
-        // Wordpress returned an error
-        errorDescription = {};
-        if (body) errorDescription = { error_info: body };
-        res.status(wordpressResponse.statusCode).send(errorDescription);
-      } else {
-        // Networking error or similar- no response
-        // 503 == service unavailable
-        res.sendStatus(503);
-      }
-    }
-  );
-};
+// Uncomment for Step 3: Post new resources to the origin service (Channelback)
+
+// exports.channelback = (metadata, parentId, channelbackMessage, res) => {
+//   const postId = parseExternalCommentId(parentId).post_id;
+//   const options = channelbackOptions(
+//     metadata,
+//     parseExternalCommentId(parentId).comment_id,
+//     postId,
+//     channelbackMessage);
+//   let bodyInfo;
+//   let errorDescription;
+
+//   request.post(
+//     options,
+//     (error, wordpressResponse, body) => {
+//       if (!error && wordpressResponse.statusCode === 201) {
+//         // Successfully created Wordpress comment.  Return the ID of the new
+//         // comment.
+//         bodyInfo = JSON.parse(body);
+//         res.status(200).send({
+//           external_id: externalCommentId(
+//                         parseExternalCommentId(parentId).link,
+//                         bodyInfo.id,
+//                         postId)
+//         });
+//       } else if (wordpressResponse && wordpressResponse.statusCode) {
+//         // Wordpress returned an error
+//         errorDescription = {};
+//         if (body) errorDescription = { error_info: body };
+//         res.status(wordpressResponse.statusCode).send(errorDescription);
+//       } else {
+//         // Networking error or similar- no response
+//         // 503 == service unavailable
+//         res.sendStatus(503);
+//       }
+//     }
+//   );
+// };
 
 /**
  * When a Zendesk agent wishes to see the original Wordpress comment associated
@@ -528,9 +552,12 @@ exports.channelback = (metadata, parentId, channelbackMessage, res) => {
  * decorated ID, as returned by "externalCommentId."
  * @param {Object} res Response object which will redirect the browser
  */
-exports.clickthrough = (externalId, res) => {
-  res.redirect(parseExternalCommentId(externalId).link);
-};
+
+// Uncomment for Step 7: Provide native resource links in Zendesk (Clickthrough)
+
+// exports.clickthrough = (externalId, res) => {
+//   res.redirect(parseExternalCommentId(externalId).link);
+// };
 
 /**
  * Zendesk may request the healthcheck endpoint to assure that the integration
